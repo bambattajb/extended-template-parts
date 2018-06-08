@@ -3,10 +3,10 @@
  * Extended template parts for WordPress.
  *
  * @package   ExtendedTemplateParts
- * @version   1.1.0
+ * @version   1.0.1
  * @author    John Blackbourn <https://johnblackbourn.com>
  * @link      https://github.com/johnbillion/extended-template-parts
- * @copyright 2012-2018 John Blackbourn
+ * @copyright 2012-2016 John Blackbourn
  * @license   GPL v2 or later
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,155 +39,166 @@
  * }
  */
 function get_extended_template_part( $slug, $name = '', array $vars = [], array $args = [] ) {
-	$template = new Extended_Template_Part( $slug, $name, $vars, $args );
-	$dir = $template->args['dir'];
-	/* This action is documented in WordPress core: wp-includes/general-template.php */
-	do_action( "get_template_part_{$dir}/{$slug}", "{$dir}/{$slug}", $name );
-	echo $template->get_output(); // WPCS: XSS ok.
+    $template = new Extended_Template_Part( $slug, $name, $vars, $args );
+    echo $template->get_output(); // WPCS: XSS ok.
 }
 
 class Extended_Template_Part {
 
-	public $slug = '';
-	public $name = '';
-	public $args = [];
-	public $vars = [];
-	protected $template = null;
+    public $slug = '';
+    public $name = '';
+    public $args = [];
+    public $vars = [];
+    protected $template = null;
 
-	/**
-	 * Class constructor.
-	 *
-	 * @see get_extended_template_part()
-	 *
-	 * @param string $slug The slug name for the generic template.
-	 * @param string $name The name of the specialised template.
-	 * @param array  $vars Variables for use within the template part.
-	 * @param array  $args Arguments for the template part.
-	 */
-	public function __construct( $slug, $name = '', array $vars = [], array $args = [] ) {
+    /**
+     * Class constructor.
+     *
+     * @see get_extended_template_part()
+     *
+     * @param string $slug The slug name for the generic template.
+     * @param string $name The name of the specialised template.
+     * @param array  $vars Variables for use within the template part.
+     * @param array  $args Arguments for the template part.
+     */
+    public function __construct( $slug, $name = '', array $vars = [], array $args = [] ) {
 
-		$args = wp_parse_args( $args, array(
-			'cache' => false,
-			'dir'   => 'template-parts',
-		) );
+        $args = wp_parse_args( $args, array(
+            'cache' => false,
+            'dir'   => 'template-parts',
+        ) );
 
-		$this->slug = $slug;
-		$this->name = $name;
-		$this->args = $args;
+        $this->slug = $slug;
+        $this->name = $name;
+        $this->args = $args;
 
-		$this->set_vars( $vars );
+        $this->set_vars( $vars );
 
-	}
+    }
 
-	/**
-	 * Get the output of the template part.
-	 *
-	 * @return string The template part output.
-	 */
-	public function get_output() {
+    /**
+     * Get the output of the template part.
+     *
+     * @return string The template part output.
+     */
+    public function get_output() {
 
-		if ( false === $this->args['cache'] || ! $output = $this->get_cache() ) {
+        if ( false === $this->args['cache'] || ! $output = $this->get_cache() ) {
 
-			ob_start();
-			if ( $this->has_template() ) {
-				$this->load_template( $this->locate_template() );
-			}
-			$output = ob_get_clean();
+            ob_start();
+            if ( $this->has_template() ) {
+                $this->load_template( $this->locate_template() );
+            }
+            $output = ob_get_clean();
 
-			if ( false !== $this->args['cache'] ) {
-				$this->set_cache( $output );
-			}
+            if ( false !== $this->args['cache'] ) {
+                $this->set_cache( $output );
+            }
 
-		}
+        }
 
-		return $output;
+        return $output;
 
-	}
+    }
 
-	/**
-	 * Is the requested template part available?
-	 *
-	 * @return boolean Whether the template part is available.
-	 */
-	public function has_template() {
-		return !! $this->locate_template();
-	}
+    /**
+     * Is the requested template part available?
+     *
+     * @return boolean Whether the template part is available.
+     */
+    public function has_template() {
+        return !! $this->locate_template();
+    }
 
-	/**
-	 * Set the variables available to this template part.
-	 *
-	 * @param array $vars Template variables.
-	 */
-	public function set_vars( array $vars ) {
-		$this->vars = array_merge( $this->vars, $vars );
-	}
+    /**
+     * Set the variables available to this template part.
+     *
+     * @param array $vars Template variables.
+     */
+    public function set_vars( array $vars ) {
+        $this->vars = array_merge( $this->vars, $vars );
+    }
 
-	/**
-	 * Locate the template part file according to the slug and name.
-	 *
-	 * @return string The template part file name. Empty string if none is found.
-	 */
-	protected function locate_template() {
+    /**
+     * Locate the template part file according to the slug and name.
+     *
+     * @return string The template part file name. Empty string if none is found.
+     */
+    protected function locate_template() {
 
-		if ( isset( $this->template ) ) {
-			return $this->template;
-		}
+        if ( isset( $this->template ) ) {
+            return $this->template;
+        }
 
-		$templates = [];
+        $templates = [];
 
-		if ( ! empty( $this->name ) ) {
-			$templates[] = "{$this->args['dir']}/{$this->slug}-{$this->name}.php";
-		}
+        if ( ! empty( $this->name ) ) {
+            $templates[] = "{$this->args['dir']}/{$this->slug}-{$this->name}.php";
+        }
 
-		$templates[] = "{$this->args['dir']}/{$this->slug}.php";
+        $templates[] = "{$this->args['dir']}/{$this->slug}.php";
 
-		$this->template = locate_template( $templates );
+        $this->template = locate_template( $templates );
 
-		if ( 0 !== validate_file( $this->template ) ) {
-			$this->template = '';
-		}
-		return $this->template;
+        if ( 0 !== validate_file( $this->template ) ) {
+            $this->template = '';
+        }
+        return $this->template;
 
-	}
+    }
 
-	/**
-	 * Load the template part.
-	 *
-	 * @param  string $template_file The template part file path.
-	 */
-	protected function load_template( $template_file ) {
-		global $posts, $post, $wp_did_header, $wp_query, $wp_rewrite, $wpdb, $wp_version, $wp, $id, $comment, $user_ID;
-		if ( 0 !== validate_file( $template_file ) ) {
-			return;
-		}
-		require $template_file;
-	}
+    /**
+     * Load the template part.
+     *
+     * @param  string $template_file The template part file path.
+     */
+    protected function load_template( $template_file ) {
+        global $posts, $post, $wp_did_header, $wp_query, $wp_rewrite, $wpdb, $wp_version, $wp, $id, $comment, $user_ID;
+        if ( 0 !== validate_file( $template_file ) ) {
+            return;
+        }
+        require $template_file;
+    }
 
-	/**
-	 * Get the cached version of the template part output.
-	 *
-	 * @return string|false The cached output, or boolean false if there is no cached version.
-	 */
-	protected function get_cache() {
-		return get_transient( $this->cache_key() );
-	}
+    /**
+     * Get the cached version of the template part output.
+     *
+     * @return string|false The cached output, or boolean false if there is no cached version.
+     */
+    protected function get_cache() {
+        return get_transient( $this->cache_key() );
+    }
 
-	/**
-	 * Cache the template part output.
-	 *
-	 * @param string $output The template part output.
-	 */
-	protected function set_cache( $output ) {
-		return set_transient( $this->cache_key(), $output, $this->args['cache'] );
-	}
+    /**
+     * Cache the template part output.
+     *
+     * @param string $output The template part output.
+     */
+    protected function set_cache( $output ) {
+        return set_transient( $this->cache_key(), $output, $this->args['cache'] );
+    }
 
-	/**
-	 * Get the template part cache key.
-	 *
-	 * @return string The cache key.
-	 */
-	protected function cache_key() {
-		return 'part_' . md5( $this->locate_template() . '/' . wp_json_encode( $this->args ) );
-	}
+    /**
+     * Get the template part cache key.
+     *
+     * @return string The cache key.
+     */
+    protected function cache_key() {
+        return 'part_' . md5( $this->locate_template() . '/' . wp_json_encode( $this->args ) );
+    }
+
+    /**
+     * Use this method to precheck value
+     * Helps for clean template code
+     * @param string $name
+     * @return bool|mixed
+     */
+    public function data($name='') {
+        if(isset($this->vars[$name])) {
+            return $this->vars[$name];    
+        }
+        
+        return false;
+    }
 
 }

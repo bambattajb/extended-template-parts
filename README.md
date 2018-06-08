@@ -40,6 +40,12 @@ get_extended_template_part( 'foo', 'bar', array(
 ) );
 ```
 
+Use in template `/my-theme/my-directory/foo-bar.php`:
+
+```php
+<?= $this->data('my_variable') ?>
+```
+
 ## License: GPLv2 or later ##
 
 This program is free software; you can redistribute it and/or modify
